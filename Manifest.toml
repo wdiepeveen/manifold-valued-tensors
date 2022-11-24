@@ -526,6 +526,12 @@ git-tree-sha1 = "7f4beb9dfeb4329ead0d6fb11f5a1bc6539c7f13"
 uuid = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 version = "0.3.40"
 
+[[deps.MappedArrays]]
+deps = ["FixedPointNumbers"]
+git-tree-sha1 = "b92bd220c95a8bbe89af28f11201fd080e0e3fe7"
+uuid = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
+version = "0.3.0"
+
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
@@ -562,6 +568,12 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
+
+[[deps.NIfTI]]
+deps = ["Base64", "CodecZlib", "MappedArrays", "Mmap", "TranscodingStreams"]
+git-tree-sha1 = "2bcec409f8e60776933438c63696d27006165a84"
+uuid = "a3a9e032-41b5-5fc4-967a-a6b7a19844d3"
+version = "0.5.8"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
