@@ -7,8 +7,6 @@ using Manifolds
 function CR_SVD(M, q, X)
     n = size(X)[1]
     d = manifold_dimension(M)
-    # powerM = PowerManifold(M, n)
-    # powerq = fill(q, n)
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     # compute Gramm matrix
