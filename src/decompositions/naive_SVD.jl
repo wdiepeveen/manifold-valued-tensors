@@ -9,8 +9,6 @@ function naive_SVD(M, q, X)
     # compute U and R_q
     r = min(n, manifold_dimension(M))
     (_, U) = eigen(Gramm_mat, n-r+1:n)
-    println(size(U))
-    println(size(log_q_X))
     R_q = [sum(U[:,i] .* log_q_X[:]) for i=1:r]
     return R_q, U
 end
