@@ -1,6 +1,6 @@
-include("naive_SVD.jl")
+include("curvature_reweighed_SVD.jl")
 
-function naive_HOSVD(M, q, X)  # only works for 2D and 3D atm
+function curvature_reweighed_HOSVD(M, q, X)  # only works for 2D and 3D atm
     n = size(X)
     dims = length(n)
     @assert dims > 1 and dims < 4
@@ -31,8 +31,8 @@ function naive_HOSVD(M, q, X)  # only works for 2D and 3D atm
                 Xᵢ = [X[:,:,k] for k in 1:nᵢ]
             end
         end
-        # compute Uᵢ from naive_SVD
-        _, Uᵢ = naive_SVD(Mᵢ, qᵢ, Xᵢ)
+        # compute Uᵢ from CR_SVD
+        _, Uᵢ = curvature_reweighed_SVD(Mᵢ, qᵢ, Xᵢ)
         # append Uᵢ
         push!(U,Uᵢ)
     end
