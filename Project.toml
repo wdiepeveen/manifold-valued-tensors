@@ -1,7 +1,10 @@
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
+FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
+ManifoldDiff = "af67fdf4-a580-4b9f-bbec-742ef357defd"
 Manifolds = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 Manopt = "0fc0a36d-df90-57f3-8f93-d78a9fc72bb5"
 NIfTI = "a3a9e032-41b5-5fc4-967a-a6b7a19844d3"
