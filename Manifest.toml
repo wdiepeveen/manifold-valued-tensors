@@ -632,10 +632,10 @@ uuid = "1cead3c2-87b3-11e9-0ccd-23c62b72b94e"
 version = "0.8.38"
 
 [[deps.ManifoldsBase]]
-deps = ["LinearAlgebra", "Markdown"]
-git-tree-sha1 = "a4937b645251d937ceb3b67643f65e8490fd271d"
+deps = ["LinearAlgebra", "Markdown", "Random"]
+git-tree-sha1 = "160a6b880d71bbec3411d20523001f5046b0946c"
 uuid = "3362f125-f0bb-47a3-aa74-596ffd7ef2fb"
-version = "0.13.24"
+version = "0.13.30"
 
 [[deps.Manopt]]
 deps = ["ColorSchemes", "ColorTypes", "Colors", "DataStructures", "Dates", "LinearAlgebra", "ManifoldsBase", "Markdown", "Printf", "Random", "Requires", "SparseArrays", "StaticArrays", "Statistics", "Test"]
