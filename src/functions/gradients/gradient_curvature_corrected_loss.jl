@@ -1,7 +1,7 @@
 using Manifolds
 using LinearAlgebra
 
-include("beta.jl")
+include("../jacobi_field/beta.jl")
 
 function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
     n = size(X)[1]

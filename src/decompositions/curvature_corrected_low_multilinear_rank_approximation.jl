@@ -1,7 +1,6 @@
 include("naive_SVD.jl")
-include("../utils/curvature_corrected_loss.jl")
-include("../utils/gradient_curvature_corrected_loss.jl")
-include("../utils/positive_numbers.jl")
+include("../functions/loss_functions/curvature_corrected_loss.jl")
+include("../functions/gradients/gradient_curvature_corrected_loss.jl")
 
 using Manifolds, Manopt
 

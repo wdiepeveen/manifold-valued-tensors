@@ -1,4 +1,4 @@
-include("beta.jl")
+include("../../functions/jacobi_field/beta.jl")
 
 function curvature_reweighed_inner(M::AbstractManifold, q, X, V₁, V₂)
     # TODO V1 and V2 are just normal vectors and we return a number
