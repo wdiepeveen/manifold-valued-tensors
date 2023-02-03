@@ -18,9 +18,7 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     ΣVtop = get_coordinates.(Ref(M), Ref(q), R_q, Ref(DefaultOrthonormalBasis()))
     Vtop = ΣVtop ./ Σ
     V = reduce(hcat,Vtop)
-
-    # TODO check whether we can get R_q back from these
-
+    
     # retain only top r components
     Ur = U[:,end-r+1:end]
     Σr = Σ[end-r+1:end]
