@@ -33,6 +33,7 @@ function curvature_corrected_loss(M::AbstractPowerManifold, q, X, U, Σ, V)
     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
     # TODO we need to construct Ξ 
     Ξ = 0. .* log_q_X
+    VV = 
     for k in R
         # TODO we need to reshape V 
         Ξ[k] = get_vector.(Ref(M.manifold), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))

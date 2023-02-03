@@ -37,10 +37,21 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
         # append Uᵢ
         push!(U,Uₗ)
         # TODO Rₗ_q is already an n x (powersize) array -> so we can use R to iterate through it
-        Σₗ = zeros(nₗ, dₗ...)
-        Vₗ = zeros(nₗ, dₗ..., d)
+        Σₗ = [[] for i in 1:nₗ] # not nl, but rank -> this should be further unrolled into a rank x rank matrix
+        Vₗ = [[] for i in 1:nₗ] # same, but we want a rank x d vector here
+        Rₗ = CartesianIndices(Tuple(dₗ...))
+        for i in 1:nₗ
+            Σₗ[i] =  norm.(Ref(M), Ref(q), Rₗ_q[i])
+            ΣₗVₗtop = get_coordinates.(Ref(M), Ref(q), Rₗ_q[i], Ref(DefaultOrthonormalBasis()))
+            Vₗtop = ΣₗVₗtop ./ Σₗ
+            for k in Rₗ
+                # TODO think about how we are actually working with V in the end
+            end
+        end
 
         # TODO extract Sigma and V in the old way
+
+        # TODO I feel that i want the last dimension in V to be in an array -> if we want to multiply them easily (maybe not necessary)
         # TODO do GD
 
         # TODO save only the U
