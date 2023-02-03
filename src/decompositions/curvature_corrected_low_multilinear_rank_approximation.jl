@@ -5,10 +5,63 @@ include("../utils/positive_numbers.jl")
 
 using Manifolds, Manopt
 
-function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
-    n = size(X)[1]
+function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6) # TODO allow for rank to be an array -> we can recycle some stuff
+    n = size(X)
     d = manifold_dimension(M)
-    r = min(n, d, rank)
+    dims = length(n)
+    @assert dims == 2
+
+    # make list for the U's
+    d = []
+    U = []
+    Σ = []
+    V = []
+    for l in 1:dims
+        dₗ = n[1:end .!= l]
+        push!(d, prod(dₗ))
+        nₗ = n[l]
+        # construct power manifold and base point
+        Mₗ = PowerManifold(M, NestedPowerRepresentation(), dₗ...)
+        qₗ = fill(q, dₗ...)
+        # construct Xₗ
+        if dims == 2
+            if l == 1
+                Xₗ = [X[i,:] for i in 1:nₗ]
+            else
+                Xₗ = [X[:,i] for i in 1:nₗ]
+            end 
+            # else -> throw error
+        end
+        # compute Uₗ from naive_SVD
+        Rₗ_q, Uₗ = naive_SVD(Mₗ, qₗ, Xₗ)
+        # append Uᵢ
+        push!(U,Uₗ)
+        # TODO Rₗ_q is already an n x (powersize) array -> so we can use R to iterate through it
+        Σₗ = zeros(nₗ, dₗ...)
+        Vₗ = zeros(nₗ, dₗ..., d)
+
+        # TODO extract Sigma and V in the old way
+        # TODO do GD
+
+        # TODO save only the U
+    end
+
+
+
+
+
+
+    
+    d = manifold_dimension(M)
+    # r = min(n..., d, rank)
+
+    # Assume dim = 2 
+    # TODO we need to construct a powermanifold by unrulling X along both directions
+    # TODO we need R to be an iterable over the powersize of tht manifold
+    # TODO we need V ∈ R^{n x powersize x d} -> then we can get items through V[i, k, j]
+    R = CartesianIndices(Tuple(power_size))
+
+    # TODO split it up in n parts and pass it on to curvature_corrected_low_rank_approximation
 
     # compute initialisation 
     R_q, U = naive_SVD(M, q, X)  # ∈ T_q M^r x St(n,r)

@@ -21,24 +21,14 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
         
-        # Test gradients -- zero curvature
-        # Ugradient[i,:] = 2 .* [sum([inner(M, q, get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r] 
-        # Σgradient += 2 .* [sum([inner(M, q, get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r]
-        # Vgradient += 2 .* [sum([inner(M, q, get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
-
         Ugradient[i,:] = 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r] 
         Σgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r]
         Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
-
-        # Ugradient[i,:] = 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r] 
-        # Σgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r]
-        # Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()) - log_q_X[i], Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
     end
 
     # compute Riemannian gradients
     Ugrad = project(Stiefel(n,r), U, Ugradient) ./ ref_distance
-    Σgrad = Σgradient ./ ref_distance # sharp not implemented in Manifolds
-    # Σgrad = Σ .^2 .* Σgradient ./ n # sharp not implemented in Manifolds
+    Σgrad = Σgradient ./ ref_distance # we only use the smooth manifold structure, not the Riemannian structure
     Vgrad = project(Stiefel(d,r),V, Vgradient) ./ ref_distance
 
     return ProductRepr(Ugrad, Σgrad, Vgrad)
