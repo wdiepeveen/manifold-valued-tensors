@@ -1,4 +1,4 @@
-include("tangent_space_SVD.jl")
+include("../signals/naive_low_rank_approximation.jl")
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
 include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
 
@@ -8,17 +8,18 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
     n = size(X)
     d = manifold_dimension(M)
     dims = length(n)
-    @assert dims == 2
-
+    @assert dims == 2 and length(rank) == 2
+    # r = [min(n[1], d * n[2], rank[1]), min(n[2], d * n[1], rank[2])]
     # make list for the U's
-    d = []
+    ds = []
     U = []
     Σ = []
     V = []
     for l in 1:dims
         dₗ = n[1:end .!= l]
-        push!(d, prod(dₗ))
+        push!(ds, prod(dₗ))
         nₗ = n[l]
+        rₗ = min(nₗ, d * prod(dₗ), rank[l])
         # construct power manifold and base point
         Mₗ = PowerManifold(M, NestedPowerRepresentation(), dₗ...)
         qₗ = fill(q, dₗ...)
@@ -32,21 +33,29 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
             # else -> throw error
         end
         # compute Uₗ from naive_SVD
-        Rₗ_q, Uₗ = naive_SVD(Mₗ, qₗ, Xₗ)
+        Rₗ_q, Uₗ = naive_low_rank_approximation(Mₗ, qₗ, Xₗ, rₗ) # TODO implement powermanifold case
         # append Uᵢ
         push!(U,Uₗ)
         # TODO Rₗ_q is already an n x (powersize) array -> so we can use R to iterate through it
-        Σₗ = [[] for i in 1:nₗ] # not nl, but rank -> this should be further unrolled into a rank x rank matrix
-        Vₗ = [[] for i in 1:nₗ] # same, but we want a rank x d vector here
-        Rₗ = CartesianIndices(Tuple(dₗ...))
-        for i in 1:nₗ
-            Σₗ[i] =  norm.(Ref(M), Ref(q), Rₗ_q[i])
-            ΣₗVₗtop = get_coordinates.(Ref(M), Ref(q), Rₗ_q[i], Ref(DefaultOrthonormalBasis()))
-            Vₗtop = ΣₗVₗtop ./ Σₗ
-            for k in Rₗ
-                # TODO think about how we are actually working with V in the end
-            end
-        end
+        Σₗ = norm.(Ref(Mₗ), Ref(qₗ), Rₗ_q)
+        # option 1 -> probably won't work
+        ΣₗVₗtop = get_coordinates.(Ref(Mₗ), Ref(qₗ), Rₗ_q, Ref(DefaultOrthonormalBasis()))
+        # option 2
+        ΣₗVₗtop = [get_coordinates.(Ref(M), Ref(q), Rₗ_q[j], Ref(DefaultOrthonormalBasis())) for j=1:rₗ]
+        Vₗtop = ΣₗVₗtop ./ Σₗ # HIER GEBLEVEN
+        # TODO potentially reshape each entry of Vₗtop into prod(dl) * d × rl
+
+        # Σₗ = [[] for j in 1:rₗ] # not nl, but rank -> this should be further unrolled into a rank x rank matrix
+        # Vₗ = [[] for j in 1:rₗ] # same, but we want a rank x d vector here
+        # Rₗ = CartesianIndices(Tuple(dₗ...))
+        # for i in 1:nₗ
+        #     Σₗ[i] =  norm.(Ref(M), Ref(q), Rₗ_q[i])
+        #     ΣₗVₗtop = get_coordinates.(Ref(M), Ref(q), Rₗ_q[i], Ref(DefaultOrthonormalBasis()))
+        #     Vₗtop = ΣₗVₗtop ./ Σₗ
+        #     for k in Rₗ
+        #         # TODO think about how we are actually working with V in the end
+        #     end
+        # end
 
         # TODO extract Sigma and V in the old way
 
