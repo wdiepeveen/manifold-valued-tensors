@@ -1,13 +1,9 @@
-include("../signals/naive_low_rank_approximation.jl")
-include("../signals/curvature_corrected_low_rank_approximation.jl")
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
-include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
 
 using Manifolds, Manopt
 
-function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6) # TODO allow for rank to be an array -> we can recycle some stuff
+function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
     n = size(X)
-    # d = manifold_dimension(M)
     dims = length(n)
     @assert dims == 2 and length(rank) == 2
     
