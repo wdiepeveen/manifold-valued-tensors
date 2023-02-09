@@ -1,6 +1,6 @@
 using Manifolds
 
-function tangent_space_SVD(M, q, log_q_X, rank)
+function tangent_space_SVD(M::AbstractManifold, q, log_q_X, rank)
     n = size(log_q_X)[1]
     r = min(n, manifold_dimension(M), rank)
     # compute Gramm matrix

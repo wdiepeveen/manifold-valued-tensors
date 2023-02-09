@@ -1,4 +1,5 @@
 include("../signals/naive_low_rank_approximation.jl")
+include("../signals/curvature_corrected_low_rank_approximation.jl")
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
 include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
 
@@ -19,9 +20,9 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
         dₗ = n[1:end .!= l]
         push!(ds, prod(dₗ))
         nₗ = n[l]
-        rₗ = min(nₗ, d * prod(dₗ), rank[l])
         # construct power manifold and base point
         Mₗ = PowerManifold(M, NestedPowerRepresentation(), dₗ...)
+        rₗ = min(nₗ, manifold_dimension(Mₗ), rank[l])
         qₗ = fill(q, dₗ...)
         # construct Xₗ
         if dims == 2
@@ -32,18 +33,27 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
             end 
             # else -> throw error
         end
-        # compute Uₗ from naive_SVD
+        # Why not try to call CCLRA here
+        ccRrₗ_q, ccUₗ = curvature_corrected_low_rank_approximation(Mₗ, qₗ, Xₗ, rank[l]; stepsize=1/100, max_iter=2, change_tol=1e-6)
+        println("finished CCRLA")
+
+        # DEPR after this
+
+        # # compute initialisation Uₗ from naive_SVD
         Rₗ_q, Uₗ = naive_low_rank_approximation(Mₗ, qₗ, Xₗ, rₗ) # TODO implement powermanifold case
         # append Uᵢ
         push!(U,Uₗ)
         # TODO Rₗ_q is already an n x (powersize) array -> so we can use R to iterate through it
         Σₗ = norm.(Ref(Mₗ), Ref(qₗ), Rₗ_q)
-        # option 1 -> probably won't work
         ΣₗVₗtop = get_coordinates.(Ref(Mₗ), Ref(qₗ), Rₗ_q, Ref(DefaultOrthonormalBasis()))
+        println(size(ΣₗVₗtop))
+        println(size(ΣₗVₗtop[1]))
         # option 2
-        ΣₗVₗtop = [get_coordinates.(Ref(M), Ref(q), Rₗ_q[j], Ref(DefaultOrthonormalBasis())) for j=1:rₗ]
+        # ΣₗVₗtop = [get_coordinates.(Ref(M), Ref(q), Rₗ_q[j], Ref(DefaultOrthonormalBasis())) for j=1:rₗ]
         Vₗtop = ΣₗVₗtop ./ Σₗ # HIER GEBLEVEN
-        # TODO potentially reshape each entry of Vₗtop into prod(dl) * d × rl
+        V = reduce(hcat, [reshape(hcat(Vₗtop[i]...), manifold_dimension(Mₗ)) for i in 1:rₗ])
+        println(size(V))
+        
 
         # Σₗ = [[] for j in 1:rₗ] # not nl, but rank -> this should be further unrolled into a rank x rank matrix
         # Vₗ = [[] for j in 1:rₗ] # same, but we want a rank x d vector here
@@ -57,7 +67,6 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
         #     end
         # end
 
-        # TODO extract Sigma and V in the old way
 
         # TODO I feel that i want the last dimension in V to be in an array -> if we want to multiply them easily (maybe not necessary)
         # TODO do GD

@@ -23,6 +23,8 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     CCL(MM, p) = curvature_corrected_loss(M, q, X, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
     gradCCL(MM, p) = gradient_curvature_corrected_loss(M, q, X, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
     
+    println("CCLRA | l. 26 | $(CCL(M, ProductRepr(U, Σ, V)))")
+
     # do GD routine 
     Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
