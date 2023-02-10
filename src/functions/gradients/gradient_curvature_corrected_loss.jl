@@ -1,5 +1,6 @@
 using Manifolds
 using LinearAlgebra
+using LoopVectorization # -> if we want to do this, we need to unwrap all for loops 
 
 include("../jacobi_field/beta.jl")
 
@@ -33,8 +34,6 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
 
     return ProductRepr(Ugrad, Σgrad, Vgrad)
 end
-
-# TODO write version for powermanifolds
 
 function gradient_curvature_corrected_loss(M::AbstractPowerManifold, q, X, U, Σ, V)
     n = size(X)[1]
