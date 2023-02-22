@@ -1,6 +1,6 @@
 using Manifolds
 using LinearAlgebra
-using LoopVectorization # -> if we want to do this, we need to unwrap all for loops 
+using BenchmarkTools # -> if we want to do this, we need to unwrap all for loops 
 
 include("../jacobi_field/beta.jl")
 
@@ -17,7 +17,7 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
     Ugradient = zeros(size(U))
     Σgradient = zeros(size(Σ))
     Vgradient = zeros(size(V))
-    for i in 1:n
+    @time for i in 1:n
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
@@ -58,7 +58,7 @@ function gradient_curvature_corrected_loss(M::AbstractPowerManifold, q, X, U, Σ
             Θᵢₖ = ONBᵢₖ.data.vectors
             κᵢₖ = ONBᵢₖ.data.eigenvalues
             
-            Ugradient[i,:] = 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for l=1:r] 
+            Ugradient[i,:] += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for l=1:r] 
             Σgradient += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for l=1:r]
             Vgradient += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, D, D))[:,ℓ], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for ℓ=1:D, l=1:r]
         end

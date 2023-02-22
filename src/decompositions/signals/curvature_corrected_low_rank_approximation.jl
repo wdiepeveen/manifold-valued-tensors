@@ -1,3 +1,5 @@
+using BenchmarkTools
+
 include("naive_low_rank_approximation.jl")
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
 include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
@@ -10,7 +12,7 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     r = min(n, d, rank)
 
     # compute initialisation 
-    R_q, U = naive_low_rank_approximation(M, q, X, r)  # ∈ T_q M^r x St(n,r)
+    @time R_q, U = naive_low_rank_approximation(M, q, X, r)  # ∈ T_q M^r x St(n,r)
 
     # compute V and Sigma
     Σ = norm.(Ref(M), Ref(q), R_q)
@@ -24,7 +26,7 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     gradCCL(MM, p) = gradient_curvature_corrected_loss(M, q, X, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
 
     # do GD routine 
-    Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
+    @time Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
         debug=[
         :Iteration,
