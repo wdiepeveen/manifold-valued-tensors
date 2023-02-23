@@ -35,6 +35,9 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     ],)
 
     # TODO get ccRr_q and ccUr
+    println(maximum(abs.(U - submanifold_component(Ξ, 1))))
+    println(maximum(abs.(Σ - submanifold_component(Ξ, 2))))
+    println(maximum(abs.(V - submanifold_component(Ξ, 3))))
     ccUr = submanifold_component(Ξ, 1)
     ccRr_q = get_vector.(Ref(M), Ref(q),[(diagm(submanifold_component(Ξ, 2)) * transpose(submanifold_component(Ξ, 3)))[i,:] for i=1:r], Ref(DefaultOrthonormalBasis()))
     return ccRr_q, ccUr
