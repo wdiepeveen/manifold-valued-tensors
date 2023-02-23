@@ -4,7 +4,7 @@ using LoopVectorization # -> if we want to do this, we need to unwrap all for lo
 
 include("../jacobi_field/beta.jl")
 
-function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, βκ, Θ, U, Σ, V)
     n = size(X)[1]
     r = size(Σ)[1]
     d = manifold_dimension(M)
@@ -18,13 +18,10 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
     Σgradient = zeros(size(Σ))
     Vgradient = zeros(size(V))
     for i in 1:n
-        ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
-        Θᵢ = ONBᵢ.data.vectors
-        κᵢ = ONBᵢ.data.eigenvalues
         
-        Ugradient[i,:] += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r] 
-        Σgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for l=1:r]
-        Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
+        Ugradient[i,:] += 2 .* [sum([βκ[i,j]^2 * inner(M, q, get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis()), Θ[i,j]) * inner(M, q, Ξ[i] - log_q_X[i], Θ[i,j]) for j=1:d]) for l=1:r] 
+        Σgradient += 2 .* [sum([βκ[i,j]^2 * inner(M, q, get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis()), Θ[i,j]) * inner(M, q, Ξ[i] - log_q_X[i], Θ[i,j]) for j=1:d]) for l=1:r]
+        Vgradient += 2 .* [sum([βκ[i,j]^2 * inner(M, q, get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θ[i,j]) * inner(M, q, Ξ[i] - log_q_X[i], Θ[i,j]) for j=1:d]) for k=1:d, l=1:r]
     end
 
     # compute Riemannian gradients
