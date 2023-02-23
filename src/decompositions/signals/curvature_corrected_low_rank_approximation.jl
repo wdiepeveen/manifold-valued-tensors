@@ -2,7 +2,7 @@ include("naive_low_rank_approximation.jl")
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
 include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
 
-using Manifolds, Manopt
+using Manifolds, Manopt, BenchmarkTools
 
 function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
     n = size(X)[1]
@@ -30,7 +30,7 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     Σgradient = zeros(size(Σ))
     Vgradient = zeros(size(V))
 
-    ONB = get_basis.(Ref(M), Ref(q), DiagonalizingOrthonormalBasis.(log_q_X))
+    @time ONB = get_basis.(Ref(M), Ref(q), DiagonalizingOrthonormalBasis.(log_q_X))
     Θ = [ONB[i].data.vectors[j] for i in 1:n, j in 1:d]
     κ = [ONB[i].data.eigenvalues for i in 1:n]
     βκ = [β(κ[i][j]) for i in 1:n, j in 1:d]
@@ -42,10 +42,13 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     # 
 
     CCL(MM, p) = curvature_corrected_loss(M, q, X, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
-    gradCCL(MM, p) = gradient_curvature_corrected_loss(M, q, X, βκ, Θ, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
+    gradCCL(MM, p) = gradient_curvature_corrected_loss(M, q, log_q_X, βκ, Θ, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
 
+    println("time gradient eval")
+    @time gradCCL(M, ProductRepr(U, Σ, V))
+    println("time gradient descent eval")
     # do GD routine 
-    Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
+    @time Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
         debug=[
         :Iteration,
