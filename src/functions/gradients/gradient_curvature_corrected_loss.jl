@@ -1,10 +1,9 @@
 using Manifolds
 using LinearAlgebra
-using LoopVectorization # -> if we want to do this, we need to unwrap all for loops 
 
 include("../jacobi_field/beta.jl")
 
-function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, R_q, U)
     n = size(X)[1]
     r = size(Σ)[1]
     d = manifold_dimension(M)
