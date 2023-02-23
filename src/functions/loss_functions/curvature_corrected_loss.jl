@@ -6,7 +6,8 @@ function curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-    Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
+    # println([(U .* Σ * V')[i,:] for i=1:n])
+    Ξ = get_vector.(Ref(M), Ref(q),[(U .* Σ * V')[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
 
     # compute directions
     loss = 0.
