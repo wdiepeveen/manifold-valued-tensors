@@ -4,46 +4,48 @@ using LoopVectorization, BenchmarkTools # -> if we want to do this, we need to u
 
 include("../jacobi_field/beta.jl")
 
-function gradient_curvature_corrected_loss(M::AbstractManifold, q, log_q_X, βκ, Θ, U, Σ, V)
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, log_q_X, βκ, Θ, P)
     n = size(log_q_X)[1]
     r = size(Σ)[1]
     d = manifold_dimension(M)
 
-    # compute log
+    # compute ref_distance
     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-    Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
     # compute Euclidean gradients
     Ugradient = zeros(size(U))
     Σgradient = zeros(size(Σ))
     Vgradient = zeros(size(V))
+
+    Ξᵢ = zero_vector(M,q)
     Ξ_log_q_X_Θ = 0.
     ek =  Matrix(I, d, d)
     tvector_tmp = zero_vector(M, q)
     # @turbo warn_check_args=false 
     @time for i in 1:n
+        Ξᵢ = get_vector(M, q, V * (submanifold_component(P, 1)[i,:] .* submanifold_component(P, 2)), DefaultOrthonormalBasis())
         for j in 1:d
-            Ξ_log_q_X_Θ = inner(M, q, Ξ[i] - log_q_X[i], Θ[i,j])
+            Ξ_log_q_X_Θ = inner(M, q, Ξᵢ - log_q_X[i], Θ[i,j])
             for l in 1:r
-                tvector_tmp = get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis())
-                Ugradient[i,l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ
+                tvector_tmp = get_vector(M, q, submanifold_component(P, 2)[l] .* submanifold_component(P, 3)[:,l], DefaultOrthonormalBasis())
+                Ugradient[i,l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ / ref_distance
                 
-                tvector_tmp = get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis())
-                Σgradient[l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ
+                # tvector_tmp = get_vector(M, q, submanifold_component(P, 1)[i,l] .* submanifold_component(P, 3)[:,l], DefaultOrthonormalBasis())
+                # Σgradient[l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ / ref_distance
 
-                for k in 1:d
-                    tvector_tmp = get_vector(M, q, (U[i,l] * Σ[l]) .* ek[:,k], DefaultOrthonormalBasis())
-                    Vgradient[k,l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ
-                end
+                # for k in 1:d
+                #     tvector_tmp = get_vector(M, q, (submanifold_component(P, 1)[i,l] * submanifold_component(P, 2)[l]) .* ek[:,k], DefaultOrthonormalBasis())
+                #     Vgradient[k,l] += 2 * βκ[i,j]^2 * inner(M, q, tvector_tmp, Θ[i,j]) * Ξ_log_q_X_Θ / ref_distance
+                # end
             end
         end
     end
 
     # compute Riemannian gradients
-    Ugrad = project(Stiefel(n,r), U, Ugradient) ./ ref_distance
-    Σgrad = Σgradient ./ ref_distance # we only use the smooth manifold structure, not the Riemannian structure
-    Vgrad = project(Stiefel(d,r),V, Vgradient) ./ ref_distance
+    project!(Stiefel(n,r), Ugradient, submanifold_component(P, 1), Ugradient) 
+    project!(PowerManifold(PositiveNumbers(), NestedPowerRepresentation(), r), Σgradient, submanifold_component(P, 2), Σgradient) 
+    project!(Stiefel(d,r), Vgradient, submanifold_component(P, 3), Vgradient) 
 
-    return ProductRepr(Ugrad, Σgrad, Vgrad)
+    return ProductRepr(Ugradient, Σgradient, Vgradient)
 end
 
 function gradient_curvature_corrected_loss(M::AbstractPowerManifold, q, X, U, Σ, V)

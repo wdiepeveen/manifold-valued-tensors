@@ -23,14 +23,14 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     # precompute all the stuff that we can recycle
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
-    ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-    Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
+    # ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
+    # Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
     # compute Euclidean gradients
-    Ugradient = zeros(size(U))
-    Σgradient = zeros(size(Σ))
-    Vgradient = zeros(size(V))
+    # Ugradient = zeros(size(U))
+    # Σgradient = zeros(size(Σ))
+    # Vgradient = zeros(size(V))
 
-    @time ONB = get_basis.(Ref(M), Ref(q), DiagonalizingOrthonormalBasis.(log_q_X))
+    ONB = get_basis.(Ref(M), Ref(q), DiagonalizingOrthonormalBasis.(log_q_X))
     Θ = [ONB[i].data.vectors[j] for i in 1:n, j in 1:d]
     κ = [ONB[i].data.eigenvalues for i in 1:n]
     βκ = [β(κ[i][j]) for i in 1:n, j in 1:d]
@@ -44,9 +44,6 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/10
     CCL(MM, p) = curvature_corrected_loss(M, q, X, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
     gradCCL(MM, p) = gradient_curvature_corrected_loss(M, q, log_q_X, βκ, Θ, submanifold_component(p, 1), submanifold_component(p, 2), submanifold_component(p, 3))
 
-    println("time gradient eval")
-    @time gradCCL(M, ProductRepr(U, Σ, V))
-    println("time gradient descent eval")
     # do GD routine 
     @time Ξ = gradient_descent(N, CCL, gradCCL, ProductRepr(U, Σ, V); stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
