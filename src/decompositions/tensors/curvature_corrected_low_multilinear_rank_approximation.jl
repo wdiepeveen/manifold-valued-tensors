@@ -1,4 +1,5 @@
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
+include("../signals/curvature_corrected_low_rank_approximation.jl")
 
 using Manifolds, Manopt
 
