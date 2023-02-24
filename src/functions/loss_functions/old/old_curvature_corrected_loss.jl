@@ -1,12 +1,12 @@
 include("../jacobi_field/beta.jl")
 
-function curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
+function curvature_corrected_loss(M::AbstractManifold, q, X, U, Σ, V)
     n = size(X)[1]
     d = manifold_dimension(M)
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-    Ξ = get_vector.(Ref(M), Ref(q),[(U * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
+    Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
 
     # compute directions
     loss = 0.
@@ -17,37 +17,6 @@ function curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
         
         # compute loss
         loss += sum([β(κᵢ[j])^2 * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j])^2 for j=1:d])
-    end
-    return loss/ref_distance
-end
-
-function curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) where {T <:Tuple{Matrix,Matrix}}
-    n = size(X)
-    println(n)
-    d = manifold_dimension(M)
-    print(size(V))
-    r = size(V)[2:end]
-    println(r)
-
-    println("U[2] = $(size(U[2]))")
-
-    # compute log
-    log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
-    ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-
-    # compute directions
-    loss = 0.
-    R = CartesianIndices(Tuple(n))
-    L = CartesianIndices(r)
-    print(L)
-    for i in R
-        ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
-        Θᵢ = ONBᵢ.data.vectors
-        κᵢ = ONBᵢ.data.eigenvalues
-        Ξᵢ = get_vector(M, q, sum([(U[1][i[1], l[1]] * U[2][i[2], l[2]]) .* V[:, l[1], l[2]] for l in L]), DefaultOrthonormalBasis())
-    
-        # compute loss
-        loss += sum([β(κᵢ[j])^2 * inner(M, q, Ξᵢ - log_q_X[i], Θᵢ[j])^2 for j=1:d])
     end
     return loss/ref_distance
 end
