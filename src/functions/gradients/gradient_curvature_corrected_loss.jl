@@ -6,8 +6,8 @@ include("../jacobi_field/beta.jl")
 
 function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
     n = size(X)[1]
-    r = size(U)[2]
     d = manifold_dimension(M)
+    r = size(U)[2]
 
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
@@ -21,6 +21,31 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
         κᵢ = ONBᵢ.data.eigenvalues
         
         Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, (U[i,l] .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
+    end
+
+    return Vgradient
+end
+
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) where {T <:Tuple{Matrix,Matrix}}
+    n = size(X)
+    d = manifold_dimension(M)
+    r = size(V)[2:end]
+
+    # compute log
+    log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
+    ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
+    
+    # compute Euclidean gradients
+    Vgradient = zeros(size(V))
+    II = CartesianIndices(n)
+    L = CartesianIndices(r)
+    for i in II # TODO potentially subsample here -> or just implement SGD routine
+        ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
+        Θᵢ = ONBᵢ.data.vectors
+        κᵢ = ONBᵢ.data.eigenvalues
+        Ξᵢ = get_vector(M, q, sum([(U[1][i[1], l[1]] * U[2][i[2], l[2]]) .* V[:, l[1], l[2]] for l in L]), DefaultOrthonormalBasis())
+        
+        Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, ((U[1][i[1], l[1]] * U[2][i[2], l[2]]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξᵢ - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l in L]
     end
 
     return Vgradient

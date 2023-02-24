@@ -11,20 +11,18 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
     R_q, U  = naive_low_multilinear_rank_approximation(M, q, X, r)
 
     # compute R_q in coordinates
-    Rₖₗₘ = zeros(d, r...)
+    Rₖₗ = zeros(d, r...)
     L = CartesianIndices(r)
     for l in L
-        Rₖₗₘ[:, l] = get_coordinates(M, q, R_q[l], DefaultOrthonormalBasis())
+        Rₖₗ[:, l] = get_coordinates(M, q, R_q[l], DefaultOrthonormalBasis())
     end
 
     # prepare optimisation problem
     CCL(MM, V) = curvature_corrected_loss(M, q, X, Tuple(U), V) # functions should be able to see that U is an array and V is a tensor
-    # gradCCL(MM, V) = gradient_curvature_corrected_loss(M, q, X, U, V)
-
-    println(CCL(Euclidean(d, r...), Rₖₗₘ))
+    gradCCL(MM, V) = gradient_curvature_corrected_loss(M, q, X, Tuple(U), V)
 
     # do GD routine 
-    ccRₖₗ = gradient_descent(Euclidean(d, r...), CCL, gradCCL, Rₖₗₘ; stepsize=ConstantStepsize(stepsize),
+    ccRₖₗ = gradient_descent(Euclidean(d, r...), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
         debug=[
         :Iteration,
@@ -35,11 +33,11 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
     ],)
 
     # get ccRr_q
-    ccRr_q = get_vector.(Ref(M), Ref(q),[ccRₖₗ[:,l] for l=1:r], Ref(DefaultOrthonormalBasis()))
+    ccRr_q = get_vector.(Ref(M), Ref(q),[ccRₖₗ[:,l] for l in L], Ref(DefaultOrthonormalBasis()))
     return ccRr_q, U
 
-    # compute ccRr_q
-    log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
-    ccRr_q = [sum([log_q_X[k,l] * ccUr[1][k, i] * ccUr[2][l,j] for k=1:n[1], l=1:n[2]]) for i=1:r[1], j=1:r[2]]
-    return ccRr_q, ccUr
+    # # compute ccRr_q
+    # log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
+    # ccRr_q = [sum([log_q_X[k,l] * ccUr[1][k, i] * ccUr[2][l,j] for k=1:n[1], l=1:n[2]]) for i=1:r[1], j=1:r[2]]
+    # return ccRr_q, ccUr
 end
