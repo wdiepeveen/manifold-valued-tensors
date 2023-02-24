@@ -6,18 +6,16 @@ using Manifolds, Manopt
 function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
     n = size(X)
     d = manifold_dimension(M)
-    r = min.(n, d .* rank)
+    r = Tuple(min.(n, rank))
     
     R_q, U  = naive_low_multilinear_rank_approximation(M, q, X, r)
-    println(size(R_q))
 
     # compute R_q in coordinates
-    Rₖₗₘ = zeros(d, n...)
-    for k in 1:d
-
+    Rₖₗₘ = zeros(d, r...)
+    L = CartesianIndices(r)
+    for l in L
+        Rₖₗₘ[:, l] = get_coordinates(M, q, R_q[l], DefaultOrthonormalBasis())
     end
-
-    # Rₖₗₘ = reduce(hcat, get_coordinates.(Ref(M), Ref(q), R_q, Ref(DefaultOrthonormalBasis())))
 
     # prepare optimisation problem
     CCL(MM, V) = curvature_corrected_loss(M, q, X, Tuple(U), V) # functions should be able to see that U is an array and V is a tensor

@@ -37,7 +37,7 @@ function curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) where {T <
 
     # compute directions
     loss = 0.
-    R = CartesianIndices(Tuple(n))
+    R = CartesianIndices(n)
     L = CartesianIndices(r)
     print(L)
     for i in R
