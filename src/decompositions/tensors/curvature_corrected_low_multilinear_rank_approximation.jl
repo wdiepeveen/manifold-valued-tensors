@@ -18,7 +18,7 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
     end
 
     # prepare optimisation problem
-    CCL(MM, V) = curvature_corrected_loss(M, q, X, Tuple(U), V) # functions should be able to see that U is an array and V is a tensor
+    CCL(MM, V) = curvature_corrected_loss(M, q, X, Tuple(U), V)
     gradCCL(MM, V) = gradient_curvature_corrected_loss(M, q, X, Tuple(U), V)
 
     # do GD routine 
@@ -36,8 +36,4 @@ function curvature_corrected_low_multilinear_rank_approximation(M, q, X, rank; s
     ccRr_q = get_vector.(Ref(M), Ref(q),[ccRₖₗ[:,l] for l in L], Ref(DefaultOrthonormalBasis()))
     return ccRr_q, U
 
-    # # compute ccRr_q
-    # log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
-    # ccRr_q = [sum([log_q_X[k,l] * ccUr[1][k, i] * ccUr[2][l,j] for k=1:n[1], l=1:n[2]]) for i=1:r[1], j=1:r[2]]
-    # return ccRr_q, ccUr
 end
