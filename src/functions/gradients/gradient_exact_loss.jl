@@ -18,6 +18,10 @@ function gradient_exact_loss(M::AbstractManifold, q, X, U, V)
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
+        
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
+        end
 
         # compute (exp_q (Ξᵢ))
         qᵢ = exp(M, q, Ξ[i])
