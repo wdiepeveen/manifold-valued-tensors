@@ -19,6 +19,10 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
+
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
+        end
         
         Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, (U[i,l] .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l=1:r]
     end
@@ -43,6 +47,11 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) w
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
+        
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
+        end
+
         Ξᵢ = get_vector(M, q, sum([(U[1][i[1], l[1]] * U[2][i[2], l[2]]) .* V[:, l[1], l[2]] for l in L]), DefaultOrthonormalBasis())
         
         Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, ((U[1][i[1], l[1]] * U[2][i[2], l[2]]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξᵢ - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l in L]

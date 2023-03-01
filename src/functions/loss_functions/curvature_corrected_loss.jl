@@ -41,6 +41,10 @@ function curvature_corrected_loss(M::AbstractManifold, q, X, Ξ)
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
         
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
+        end
+        
         # compute loss
         loss += sum([β(κᵢ[j])^2 * inner(M, q, Ξ[i] - log_q_X[i], Θᵢ[j])^2 for j=1:d])
     end
