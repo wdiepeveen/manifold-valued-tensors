@@ -5,17 +5,20 @@ using LoopVectorization # -> if we want to do this, we need to unwrap all for lo
 include("../jacobi_field/beta.jl")
 
 function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
-    n = size(X)[1]
+    n = size(X)
     d = manifold_dimension(M)
     r = size(U)[2]
+
+    II = CartesianIndices(n)
 
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-    Ξ = get_vector.(Ref(M), Ref(q),[(U * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
+    Ξ = get_vector.(Ref(M), Ref(q),[(U * transpose(V))[i,:] for i in II], Ref(DefaultOrthonormalBasis()))
     # compute Euclidean gradients
+    
     Vgradient = zeros(size(V))
-    for i in 1:n # TODO potentially subsample here -> or just implement SGD routine
+    for i in II
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
@@ -47,7 +50,7 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) w
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
         κᵢ = ONBᵢ.data.eigenvalues
-        
+
         if typeof(M) <: AbstractSphere # bug in Manifolds.jl
             κᵢ .*= distance(M, q, X[i])^2
         end

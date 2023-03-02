@@ -16,7 +16,6 @@ function curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) where {T <
     # compute Ξ
     Ξ = zero_vector(PowerManifold(M, NestedPowerRepresentation(), n...), fill(q, n...)) # ∈ T_q M^n
 
-    # compute Ξ
     I = CartesianIndices(n)
     L = CartesianIndices(r)
     for i in I
