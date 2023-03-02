@@ -26,18 +26,20 @@ function curvature_corrected_stepsize(M, q, X, U)
 end
 
 function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple{Matrix,Matrix}}
+# function curvature_corrected_stepsize(M, q, X, U)    
     n = size(X)
     d = manifold_dimension(M)
     dims = length(n)
-    r = [size(U[z])[2] for z=1:dims]
+    r = Tuple([size(U[z])[2] for z=1:dims])
 
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     # compute Euclidean gradients
     II = CartesianIndices(n)
-    R = CartesianIndex(r)
-    A = zeros(size(V)..., size(V)...)
+    R = CartesianIndices(r)
+    A = zeros(d, r..., d, r...)
     eye = Matrix(I, d, d)
+
     for i in II
         ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
         Θᵢ = ONBᵢ.data.vectors
@@ -51,5 +53,5 @@ function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple{Matrix,Mat
    
     end
 
-    return 2 * sqrt(sum(A .^2))
+    return 1/(2 * sqrt(sum(A .^2)))
 end
