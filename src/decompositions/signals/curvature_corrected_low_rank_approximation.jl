@@ -5,7 +5,7 @@ include("../../utils/curvature_corrected_step_size.jl")
 
 using Manifolds, Manopt
 
-function curvature_corrected_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
+function curvature_corrected_low_rank_approximation(M, q, X, rank; max_iter=200, change_tol=1e-6)
     n = size(X)[1]
     d = manifold_dimension(M)
     r = min(n, d, rank)

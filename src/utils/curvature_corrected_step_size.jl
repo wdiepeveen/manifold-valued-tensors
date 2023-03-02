@@ -25,8 +25,7 @@ function curvature_corrected_stepsize(M, q, X, U)
     return 1/(2 * sqrt(sum(A .^2)))
 end
 
-function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple{Matrix,Matrix}}
-# function curvature_corrected_stepsize(M, q, X, U)    
+function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple}
     n = size(X)
     d = manifold_dimension(M)
     dims = length(n)
