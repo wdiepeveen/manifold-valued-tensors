@@ -24,13 +24,14 @@ function stochastic_curvature_corrected_low_rank_approximation(M, q, X, rank; ma
 
     # do GD routine 
     ccRₖₗ = stochastic_gradient_descent(Euclidean(d, r), gradCCL, Rₖₗ; cost=CCL, stepsize=ConstantStepsize(step_size),
-        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenChangeLess(change_tol)), # StopWhenGradientNormLess(10.0^-8),
+        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter)), #,StopWhenChangeLess(change_tol)), # StopWhenGradientNormLess(10.0^-8),
         debug=[
         :Iteration,
         (:Change, "change: %1.9f | "),
         (:Cost, " F(x): %1.11f | "),
         "\n",
         :Stop,
+        50,
     ],)
 
     # get ccRr_q

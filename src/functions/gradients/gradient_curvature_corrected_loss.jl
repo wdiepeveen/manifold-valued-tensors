@@ -94,3 +94,33 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) w
     return Vgradient
 end
 
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V, i) where {T <:Tuple{Matrix,Matrix}}
+    n = size(X)
+    d = manifold_dimension(M)
+    dims = length(n)
+    r = size(V)[2:end]
+
+    # compute log
+    log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
+    ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
+    
+    # compute Euclidean gradients
+    Vgradient = zeros(size(V))
+    II = CartesianIndices(n)
+    L = CartesianIndices(r)
+    
+    ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
+    Θᵢ = ONBᵢ.data.vectors
+    κᵢ = ONBᵢ.data.eigenvalues
+
+    if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+        κᵢ .*= distance(M, q, X[i])^2
+    end
+
+    Ξᵢ = get_vector(M, q, sum([prod([U[z][i[z],l[z]] for z=1:dims]) .* V[:, l[1], l[2]] for l in L]), DefaultOrthonormalBasis())
+    
+    Vgradient += 2 .* [sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, (prod([U[z][i[z],l[z]] for z=1:dims]) .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q, Ξᵢ - log_q_X[i], Θᵢ[j]) for j=1:d]) for k=1:d, l in L]
+    
+
+    return Vgradient
+end

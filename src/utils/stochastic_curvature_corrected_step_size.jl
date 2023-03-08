@@ -28,7 +28,7 @@ function stochastic_curvature_corrected_stepsize(M, q, X, U, i)
     return 1/(2 * sqrt(A_F))
 end
 
-function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple}
+function stochastic_curvature_corrected_stepsize(M, q, X, U::T, i) where {T <:Tuple}
     n = size(X)
     d = manifold_dimension(M)
     dims = length(n)
@@ -37,25 +37,23 @@ function curvature_corrected_stepsize(M, q, X, U::T) where {T <:Tuple}
     # compute log
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
     # compute Euclidean gradients
-    II = CartesianIndices(n)
     R = CartesianIndices(r)
     A_F = 0.
     eye = Matrix(I, d, d)
 
     for k₁=1:d, l₁ in R, k₂=1:d, l₂ in R
         Aₖₗ = 0.
-        for i in II
-            ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
-            Θᵢ = ONBᵢ.data.vectors
-            κᵢ = ONBᵢ.data.eigenvalues
+        
+        ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
+        Θᵢ = ONBᵢ.data.vectors
+        κᵢ = ONBᵢ.data.eigenvalues
 
-            if typeof(M) <: AbstractSphere # bug in Manifolds.jl
-                κᵢ .*= distance(M, q, X[i])^2
-            end
-            
-            Aₖₗ += sum([β(κᵢ[j])^2 * prod([U[z][i[z],l₁[z]] for z=1:dims]) * prod([U[z][i[z],l₂[z]] for z=1:dims]) * inner(M, q, get_vector(M, q, eye[:,k₁], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q,get_vector(M, q, eye[:,k₂], DefaultOrthonormalBasis()), Θᵢ[j]) for j=1:d]) 
-            
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
         end
+        
+        Aₖₗ += sum([β(κᵢ[j])^2 * prod([U[z][i[z],l₁[z]] for z=1:dims]) * prod([U[z][i[z],l₂[z]] for z=1:dims]) * inner(M, q, get_vector(M, q, eye[:,k₁], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q,get_vector(M, q, eye[:,k₂], DefaultOrthonormalBasis()), Θᵢ[j]) for j=1:d]) 
+            
         A_F += Aₖₗ^2
     end
 
