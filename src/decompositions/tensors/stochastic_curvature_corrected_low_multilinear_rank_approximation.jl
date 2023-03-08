@@ -1,6 +1,6 @@
 include("../../functions/loss_functions/curvature_corrected_loss.jl")
 include("../signals/curvature_corrected_low_rank_approximation.jl")
-include("../../utils/curvature_corrected_step_size.jl")
+include("../../utils/stochastic_curvature_corrected_step_size.jl")
 
 using Manifolds, Manopt
 

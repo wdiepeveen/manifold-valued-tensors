@@ -1,5 +1,7 @@
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Einsum = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"

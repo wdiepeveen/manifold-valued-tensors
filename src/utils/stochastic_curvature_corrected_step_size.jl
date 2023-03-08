@@ -1,4 +1,4 @@
-function curvature_corrected_stepsize(M, q, X, U)
+function stochastic_curvature_corrected_stepsize(M, q, X, U, i)
     n = size(X)
     d = manifold_dimension(M)
     r = size(U)[2]
@@ -11,19 +11,17 @@ function curvature_corrected_stepsize(M, q, X, U)
     eye = Matrix(I, d, d)
     for k₁=1:d, l₁=1:r, k₂=1:d, l₂=1:r
         Aₖₗ = 0.
-        for i in II
-            ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
-            Θᵢ = ONBᵢ.data.vectors
-            κᵢ = ONBᵢ.data.eigenvalues
 
-            if typeof(M) <: AbstractSphere # bug in Manifolds.jl
-                κᵢ .*= distance(M, q, X[i])^2
-            end
+        ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[i]))
+        Θᵢ = ONBᵢ.data.vectors
+        κᵢ = ONBᵢ.data.eigenvalues
 
-            
-            Aₖₗ += sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, U[i,l₁] .* eye[:,k₁], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q,get_vector(M, q, U[i,l₂] .* eye[:,k₂], DefaultOrthonormalBasis()), Θᵢ[j]) for j=1:d])
-
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κᵢ .*= distance(M, q, X[i])^2
         end
+        
+        Aₖₗ += sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, U[i,l₁] .* eye[:,k₁], DefaultOrthonormalBasis()), Θᵢ[j]) * inner(M, q,get_vector(M, q, U[i,l₂] .* eye[:,k₂], DefaultOrthonormalBasis()), Θᵢ[j]) for j=1:d])
+
         A_F += Aₖₗ^2
     end
 

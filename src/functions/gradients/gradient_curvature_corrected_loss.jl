@@ -34,6 +34,35 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V)
     return Vgradient
 end
 
+function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U, V, i)
+    n = size(X)
+    d = manifold_dimension(M)
+    r = size(U)[2]
+
+    # compute log
+    log_q_Xᵢ = log(M, q, X[i])  # ∈ T_q M
+    Ξᵢ = get_vector(M, q, (U * transpose(V))[i,:], DefaultOrthonormalBasis())
+    # compute Euclidean gradients
+    
+    Vgradient = zeros(size(V))
+
+    ONBᵢ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_Xᵢ))
+    Θᵢ = ONBᵢ.data.vectors
+    κᵢ = ONBᵢ.data.eigenvalues
+
+    if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+        κᵢ .*= distance(M, q, X[i])^2
+    end
+
+    innerᵢ = [inner(M, q, Ξᵢ - log_q_Xᵢ, Θᵢ[j]) for j in 1:d]
+
+    for k=1:d, l=1:r
+        Vgradient[k,l] += 2 * sum([β(κᵢ[j])^2 * inner(M, q, get_vector(M, q, (U[i,l] .* Matrix(I, d, d))[:,k], DefaultOrthonormalBasis()), Θᵢ[j]) * innerᵢ[j] for j=1:d])
+    end
+
+    return Vgradient
+end
+
 function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) where {T <:Tuple{Matrix,Matrix}}
     n = size(X)
     d = manifold_dimension(M)
@@ -65,39 +94,3 @@ function gradient_curvature_corrected_loss(M::AbstractManifold, q, X, U::T, V) w
     return Vgradient
 end
 
-# function gradient_curvature_corrected_loss(M::AbstractPowerManifold, q, X, U, Σ, V)
-#     n = size(X)[1]
-#     r = size(Σ)[1]
-#     d = manifold_dimension(M.manifold)
-#     D = manifold_dimension(M)
-
-#     power_size = power_dimensions(M)
-#     R = CartesianIndices(Tuple(power_size))
-
-#     # compute log
-#     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
-#     ref_distance = sum(norm.(Ref(M), Ref(q), log_q_X).^2)
-#     Ξ = get_vector.(Ref(M), Ref(q),[(U * diagm(Σ) * transpose(V))[i,:] for i=1:n], Ref(DefaultOrthonormalBasis()))
-#     # compute Euclidean gradients
-#     Ugradient = zeros(size(U))
-#     Σgradient = zeros(size(Σ))
-#     Vgradient = zeros(size(V))
-#     for i in 1:n
-#         for k in R 
-#             ONBᵢₖ = get_basis(M.manifold, q[k], DiagonalizingOrthonormalBasis(log_q_X[i][k]))
-#             Θᵢₖ = ONBᵢₖ.data.vectors
-#             κᵢₖ = ONBᵢₖ.data.eigenvalues
-            
-#             Ugradient[i,:] += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, Σ[l] .* V[:,l], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for l=1:r] 
-#             Σgradient += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, U[i,l] .* V[:,l], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for l=1:r]
-#             Vgradient += 2 .* [sum([β(κᵢₖ[j])^2 * inner(M.manifold, q[k], get_vector(M, q, ((U[i,l] * Σ[l]) .* Matrix(I, D, D))[:,ℓ], DefaultOrthonormalBasis())[k], Θᵢₖ[j]) * inner(M.manifold, q[k], Ξ[i][k] - log_q_X[i][k], Θᵢₖ[j]) for j=1:d]) for ℓ=1:D, l=1:r]
-#         end
-#     end
-
-#     # compute Riemannian gradients
-#     Ugrad = project(Stiefel(n,r), U, Ugradient) ./ ref_distance
-#     Σgrad = Σgradient ./ ref_distance # we only use the smooth manifold structure, not the Riemannian structure
-#     Vgrad = project(Stiefel(D,r),V, Vgradient) ./ ref_distance
-
-#     return ProductRepr(Ugrad, Σgrad, Vgrad)
-# end
