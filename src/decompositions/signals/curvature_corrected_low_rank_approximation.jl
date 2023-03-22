@@ -1,39 +1,43 @@
 include("naive_low_rank_approximation.jl")
-include("../../functions/loss_functions/curvature_corrected_loss.jl")
-include("../../functions/gradients/gradient_curvature_corrected_loss.jl")
-include("../../utils/curvature_corrected_step_size.jl")
+include("../../functions/jacobi_field/beta.jl")
 
 using Manifolds, Manopt
 
-function curvature_corrected_low_rank_approximation(M, q, X, rank; max_iter=200, change_tol=1e-6)
-    n = size(X)[1]
+function curvature_corrected_low_rank_approximation(M, q, X, rank)
+    n = size(X)
     d = manifold_dimension(M)
-    r = min(n, d, rank)
+    r = min(n[1], d, rank)
 
     # compute initialisation 
-    R_q, U = naive_low_rank_approximation(M, q, X, r)  # ∈ T_q M^r x St(n,r)
+    R_q, U = naive_low_rank_approximation(M, q, X, r) 
+    # construct linear system
+    J = CartesianIndices(n)
+    log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
 
-    # compute R_q in coordinates
-    Rₖₗ = reduce(hcat, get_coordinates.(Ref(M), Ref(q), R_q, Ref(DefaultOrthonormalBasis())))
+    A = zeros(d, r, d, r)
+    b = zeros(d, r)
+    for j₁ in J
+        ONBⱼ₁ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[j₁]))
+        Θⱼ₁ = ONBⱼ₁.data.vectors
+        κⱼ₁ = ONBⱼ₁.data.eigenvalues
 
-    # prepare optimisation problem
-    CCL(MM, V) = curvature_corrected_loss(M, q, X, U, V)
-    gradCCL(MM, V) = gradient_curvature_corrected_loss(M, q, X, U, V)
-    step_size = curvature_corrected_stepsize(M, q, X, U)
-    println("step_size = $(step_size)")
+        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
+            κⱼ₁ .*= distance(M, q, X[j₁])^2
+        end
 
-    # do GD routine 
-    ccRₖₗ = gradient_descent(Euclidean(d, r), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(step_size),
-        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
-        debug=[
-        :Iteration,
-        (:Change, "change: %1.9f | "),
-        (:Cost, " F(x): %1.11f | "),
-        "\n",
-        :Stop,
-    ],)
+        A += [sum([β(κⱼ₁[j])^2 * inner(M, q, get_vector(M, q, (U[j₁,l₁] .* Matrix(I, d, d))[:,k₁], DefaultOrthonormalBasis()), Θⱼ₁[j]) * inner(M, q, get_vector(M, q, (U[j₁,l₂] .* Matrix(I, d, d))[:,k₂], DefaultOrthonormalBasis()), Θⱼ₁[j])  for j=1:d]) for k₁=1:d, l₁=1:r, k₂=1:d, l₂=1:r]
+        b += [sum([β(κⱼ₁[j])^2 * inner(M, q, get_vector(M, q, (U[j₁,l₁] .* Matrix(I, d, d))[:,k₁], DefaultOrthonormalBasis()), Θⱼ₁[j]) * inner(M, q, log_q_X[j₁], Θⱼ₁[j])  for j=1:d]) for k₁=1:d, l₁=1:r]
+    end
+
+    # add regularisation
+    AA = reshape(A, (d * r, d * r))
+    bb = reshape(b, (d * r))
+
+    # solve linear system
+    VVₖₗ = AA\bb
+    Vₖₗ = reshape(VVₖₗ, (d, r))
 
     # get ccRr_q
-    ccRr_q = get_vector.(Ref(M), Ref(q),[ccRₖₗ[:,l] for l=1:r], Ref(DefaultOrthonormalBasis()))
-    return ccRr_q, U
+    ccR_q = get_vector.(Ref(M), Ref(q),[Vₖₗ[:,l] for l=1:r], Ref(DefaultOrthonormalBasis()))
+    return ccR_q, U
 end
