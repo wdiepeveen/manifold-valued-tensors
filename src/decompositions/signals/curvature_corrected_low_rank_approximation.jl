@@ -11,33 +11,34 @@ function curvature_corrected_low_rank_approximation(M, q, X, rank)
     # compute initialisation 
     R_q, U = naive_low_rank_approximation(M, q, X, r) 
     # construct linear system
-    J = CartesianIndices(n)
     log_q_X = log.(Ref(M), Ref(q), X)  # ∈ T_q M^n
+    
+    # construct matrix βκB
+    tensorU = repeat(reshape(U, (n[1],1,r,1)), outer=(1,d,1,d))
+    
+    tensorΨq = repeat(reshape([get_vector(M, q, Matrix(I, d, d)[:,k], DefaultOrthonormalBasis()) for k in 1:d], (1,1,1,d)), outer=(n[1],d,r,1)) 
+    
+    ONB = get_basis.(Ref(M), Ref(q), DiagonalizingOrthonormalBasis.(log_q_X))
+    βκΘq = [β(ONB[j₁].data.eigenvalues[j] * (typeof(M) <: AbstractSphere ? distance(M, q, X[j₁])^2 : 1.)) .* ONB[j₁].data.vectors[j] for j₁=1:n[1], j=1:d]
+    tensorβκΘq =  repeat(reshape(βκΘq, (n[1],d,1,1)), outer=(1,1,r,d))
+    
+    tensorβκB = tensorU .* inner.(Ref(M), Ref(q), tensorΨq, tensorβκΘq)
+    
+    βκB = reshape(tensorβκB, (n[1] * d, r * d))
 
-    A = zeros(d, r, d, r)
-    b = zeros(d, r)
-    for j₁ in J
-        ONBⱼ₁ = get_basis(M, q, DiagonalizingOrthonormalBasis(log_q_X[j₁]))
-        Θⱼ₁ = ONBⱼ₁.data.vectors
-        κⱼ₁ = ONBⱼ₁.data.eigenvalues
+    # construct matrix A
+    A = transpose(βκB) * βκB
 
-        if typeof(M) <: AbstractSphere # bug in Manifolds.jl
-            κⱼ₁ .*= distance(M, q, X[j₁])^2
-        end
-
-        A += [sum([β(κⱼ₁[j])^2 * inner(M, q, get_vector(M, q, (U[j₁,l₁] .* Matrix(I, d, d))[:,k₁], DefaultOrthonormalBasis()), Θⱼ₁[j]) * inner(M, q, get_vector(M, q, (U[j₁,l₂] .* Matrix(I, d, d))[:,k₂], DefaultOrthonormalBasis()), Θⱼ₁[j])  for j=1:d]) for k₁=1:d, l₁=1:r, k₂=1:d, l₂=1:r]
-        b += [sum([β(κⱼ₁[j])^2 * inner(M, q, get_vector(M, q, (U[j₁,l₁] .* Matrix(I, d, d))[:,k₁], DefaultOrthonormalBasis()), Θⱼ₁[j]) * inner(M, q, log_q_X[j₁], Θⱼ₁[j])  for j=1:d]) for k₁=1:d, l₁=1:r]
-    end
-
-    # add regularisation
-    AA = reshape(A, (d * r, d * r))
-    bb = reshape(b, (d * r))
+    # construct vector βκBb
+    tensorb = inner.(Ref(M), Ref(q), repeat(reshape(log_q_X, (n[1],1)), outer=(1,d)), βκΘq)
+    b = reshape(tensorb, (n[1] * d))
+    βκBb = transpose(βκB) * b
 
     # solve linear system
-    VVₖₗ = AA\bb
-    Vₖₗ = reshape(VVₖₗ, (d, r))
+    Vₖₗ = A\βκBb
+    tensorVₖₗ = reshape(Vₖₗ, (r, d))
 
     # get ccRr_q
-    ccR_q = get_vector.(Ref(M), Ref(q),[Vₖₗ[:,l] for l=1:r], Ref(DefaultOrthonormalBasis()))
+    ccR_q = get_vector.(Ref(M), Ref(q),[tensorVₖₗ[l,:] for l=1:r], Ref(DefaultOrthonormalBasis()))
     return ccR_q, U
 end
