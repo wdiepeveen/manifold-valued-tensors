@@ -4,7 +4,7 @@ include("../../functions/gradients/gradient_exact_loss.jl")
 
 using Manifolds, Manopt
 
-function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6)
+function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6, print_iterates=false)
     n = size(X)[1]
     d = manifold_dimension(M)
     r = min(n, d, rank)
@@ -20,17 +20,20 @@ function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=20
     gradCCL(MM, V) = gradient_exact_loss(M, q, X, U, V)
 
     # do GD routine 
-    ccRₖₗ = gradient_descent(Euclidean(d, r), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(stepsize),
+    R = gradient_descent(Euclidean(d, r), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(stepsize),
         stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
-        debug=[
+        record=:Cost, return_options=true,
+        debug=(print_iterates ? [
         :Iteration,
         (:Change, "change: %1.9f | "),
         (:Cost, " F(x): %1.11f | "),
         "\n",
         :Stop,
-    ],)
+    ] : []),)
 
+    costs = get_record(R)
+    ccRₖₗ =get_solver_result(R)
     # get ccRr_q
     ccRr_q = get_vector.(Ref(M), Ref(q),[ccRₖₗ[:,l] for l=1:r], Ref(DefaultOrthonormalBasis()))
-    return ccRr_q, U
+    return (ccRr_q, U), costs
 end
