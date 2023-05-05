@@ -4,7 +4,7 @@ include("../../functions/gradients/gradient_exact_loss.jl")
 
 using Manifolds, Manopt
 
-function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-6, print_iterates=false)
+function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=200, change_tol=1e-4, print_iterates=false)
     n = size(X)[1]
     d = manifold_dimension(M)
     r = min(n, d, rank)
@@ -21,7 +21,7 @@ function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=20
 
     # do GD routine 
     R = gradient_descent(Euclidean(d, r), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(stepsize),
-        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-8),StopWhenChangeLess(change_tol)), 
+        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(10.0^-6),StopWhenChangeLess(stepsize * change_tol)), 
         record=:Cost, return_options=true,
         debug=(print_iterates ? [
         :Iteration,
