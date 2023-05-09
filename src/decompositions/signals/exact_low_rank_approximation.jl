@@ -18,10 +18,11 @@ function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=20
     # prepare optimisation problem
     CCL(MM, V) = exact_loss(M, q, X, U, V)
     gradCCL(MM, V) = gradient_exact_loss(M, q, X, U, V)
+    ref_distance = sum(distance.(Ref(M), Ref(q), X).^2)
 
     # do GD routine 
     R = gradient_descent(Euclidean(d, r), CCL, gradCCL, Rₖₗ; stepsize=ConstantStepsize(stepsize),
-        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(1e-4),StopWhenChangeLess(stepsize * change_tol)), 
+        stopping_criterion=StopWhenAny(StopAfterIteration(max_iter),StopWhenGradientNormLess(1e-4 * sqrt(ref_distance)),StopWhenChangeLess(stepsize * change_tol)), 
         record=:Cost, return_options=true,
         debug=(print_iterates ? [
         :Iteration,
