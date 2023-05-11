@@ -18,7 +18,6 @@ function exact_low_rank_approximation(M, q, X, rank; stepsize=1/100, max_iter=20
     # prepare optimisation problem
     CCL(MM, V) = exact_loss(M, q, X, U, V)
     gradCCL(MM, V) = gradient_exact_loss(M, q, X, U, V)
-    ref_distance = sum(distance.(Ref(M), Ref(q), X).^2)
 
     initial_grad_norm = sqrt(sum((gradCCL(Euclidean(d, r), Rₖₗ) .^2)))
 
