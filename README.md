@@ -1,6 +1,6 @@
 # manifold-valued tensor approximation
 
-Curvature corrected tangent space-based approximation of manifold-valued data
+This repository contains the code for the main algorithms from
 
         [1] W. Diepeveen, J. Chew, D. Needell.  
         Curvature corrected tangent space-based approximation of manifold-valued data
