@@ -1,5 +1,4 @@
 # manifold-valued tensor approximation
------
 
 Curvature corrected tangent space-based approximation of manifold-valued data
 
@@ -12,14 +11,9 @@ Setup
 
 The recommended (and tested) setup is based on MacOS 12.3 running Julia 1.7.2. Clone the repository and activate the environment
 
-    # Create conda environment
-    conda create --name esl1 python=3.6
-    conda activate esl1
-
-    # Clone source code and install
-    git clone https://github.com/wdiepeveen/Cryo-EM.git
-    cd "Cryo-EM"
-    pip install -r requirements.txt
+    julia> ]
+    (v1.7) pkg> activate .
+    (env)  pkg> instantiate
 
 
 Reproducing the experiments in [1]
@@ -28,11 +22,15 @@ Reproducing the experiments in [1]
 The following jupyter notebooks have been used to produce the results in [1]. 
 The tables and plots are directly generated after running the notebook. 
 
-* 6.1. Asymptotic behaviour (Tab. 1 to 6):
+* 6.1 Synthetic low-rank 1D signals.
+   * 6.1.1 Spherical data. (Fig. 2 and 3, and Tab. 1 and 2):
 
-        experiments/testing_asymptotics/experiment.ipynb
+           experiments/1D/S6/CCLRA_artifical_1D.ipynb
+   * 6.1.2 Symmetric positive definite matrix data. (Fig. 5 and Tab. 3):
 
-* 6.2. Joint 3D map reconstruction and rotation estimation (Fig. 4, 5 and 6):
+           experiments/1D/P3/CCLRA_artifical_1D.ipynb
 
-        experiments/testing_joint_refinement/experiment.ipynb
+* 6.2. Real 2D DT-MRI data. (Fig. 7 and 8, and Tab. 4 and 5):
+
+        experiments/2D/P3/DTI_camino_2D.ipynb
 
