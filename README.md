@@ -4,7 +4,7 @@ This repository contains the code for the main algorithms from
 
         [1] W. Diepeveen, J. Chew, D. Needell.  
         Curvature corrected tangent space-based approximation of manifold-valued data
-        arXiv preprint arXiv:xxx.xxxx. 2023 mmm dd.
+        arXiv preprint arXiv:2306.00507. 2023 June 1.
 
 Setup
 -----
