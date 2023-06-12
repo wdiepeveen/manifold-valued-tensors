@@ -1,4 +1,4 @@
-# manifold-valued tensor approximation
+# Manifold-valued tensor approximation
 
 This repository contains the code for the main algorithms from
 
